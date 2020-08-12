@@ -1,0 +1,28 @@
+{
+  "name": "untitled",
+  "version": "1.0.0",
+  "description": "",
+  "main": "src/index.js",
+  "scripts": {
+    "build": "flow-remove-types src/ -d lib/",
+    "prepublish": "npm run build",
+    "test": "mocha --recursive",
+    "start": "node lib/index.js",
+    "flow": "flow"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/cli": "^7.10.5",
+    "@babel/core": "^7.11.1",
+    "@babel/preset-flow": "^7.10.4",
+    "eslint": "^7.6.0",
+    "eslint-config-airbnb-base": "^14.2.0",
+    "eslint-plugin-import": "^2.22.0",
+    "flow-bin": "^0.131.0",
+    "flow-remove-types": "^2.131.0",
+    "mocha": "^8.1.1",
+    "randomstring": "^1.1.5"
+  }
+}
