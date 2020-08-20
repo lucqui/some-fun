@@ -3,13 +3,19 @@
 
 const net = require('net');
 let Packet = require('./model/packet.js')
-const {validateSignature} = require("./service/encryption_service");
+const {validateSignature} = require("./service/signature_helper");
+
+let constants = require('./model/constants');
+const readline = require("readline");
+const fs = require("fs");
+const path = require('path')
 
 const port = 8080;
 
 const server = new net.Server();
 
 const HELLO_RESPONSE = new Packet('CONNECTION_INITIATED', 'Hello!', 'xxxx');
+const BLANK_RESPONSE = new Packet('xxxx', 'xxxx', 'xxxx')
 const SIGNATURE_VAL_FAILED_RESPONSE = new Packet('SIGNATURE_VALIDATION_FAILURE', 'Signature did not match body.', 'xxxx')
 
 function runServer() {
@@ -26,7 +32,7 @@ function runServer() {
             // The server can also receive data from the client by reading from its socket.
             socket.on('data', function (chunk) {
                 console.log(`Data received from client: ${chunk.toString()}.`);
-                handleRequests(chunk);
+                handleRequests(chunk, socket);
             });
 
             socket.on('end', function () {
@@ -42,33 +48,54 @@ function runServer() {
 
 runServer();
 
-function handleRequests(incomingData: Buffer) {
+function handleRequests(incomingData: Buffer, socket: Object) {
     let request = new Packet(incomingData);
-
 
     if(!securityCheck(request)) {
         return SIGNATURE_VAL_FAILED_RESPONSE
     }
 
-    //TODO: if header says retrieveLine:{num},fileName:secret_message.txt :
-    //Return response packet:
-    //header (first line): retrievedLine:{num}
-    //body: the line in the file
-    //signature: xxxx
+    if(request.header === constants.TRANSMIT_FILE) {
+        let map = new Map(request.body.split(',').map(s => s.split(':')))
+        let file = map.get(constants.FILENAME)
+        let lineNum = map.get(constants.READ_LINE)
 
-    //return EOF when num > fileLength:
-    //header: END_OF_FILE_REACHED
-    //body: The end of the file has been reached.
-    //signature: xxxx
-
-    return HELLO_RESPONSE;
+        readLine(lineNum, file, socket)
+    }
 }
 
 function securityCheck(request: Packet): boolean {
-    let canAccess = true;
-    canAccess = canAccess && request.body.length > 0 && request.signature.length > 0;
-    // canAccess = canAccess && validateSignature(request.body, request.signature);
-    return canAccess;
+    return validateSignature(request.body, request.signature);
+}
+
+function readLine(lineNum: number, file: string, socket) {
+    seek(lineNum, file, function(err, line) {
+        if(err) {
+            if(typeof err === RangeError){
+                let packet = new Packet(`${constants.END_OF_FILE_REACHED}`, `End of file (lineNum = ${lineNum}) has been reached.`, 'xxxx');
+                socket.write(packet.toString());
+            } else {
+                throw err;
+            }
+        }
+        let packet = new Packet(`${constants.LINE_RETRIEVED}:${lineNum}`, line, 'xxxx');
+        socket.write(packet.toString());
+    });
+}
+
+function seek(lineNumber, filename, callback) {
+    let filePath = path.join(__dirname,'resources',filename)
+    fs.readFile(filePath, function (err, data) {
+        if (err) throw err;
+
+        let lines = data.toString('utf-8').split("\n");
+
+        if(+lineNumber > lines.length){
+            return callback(new RangeError('File end reached without finding line'), null);
+        }
+
+        callback(null, lines[+lineNumber]);
+    });
 }
 
 module.exports.runServer = runServer;

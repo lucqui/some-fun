@@ -5,10 +5,12 @@
   "main": "src/index.js",
   "scripts": {
     "build": "flow-remove-types src/ -d lib/",
-    "prepublish": "npm run build",
+    "copy-resources": "cp -R src/resources/ lib/resources",
+    "prepublish": "npm run build & npm run copy-resources",
     "test": "mocha --recursive",
     "start": "node lib/index.js",
-    "flow": "flow"
+    "flow": "flow",
+    "client": "node lib/client.js"
   },
   "keywords": [],
   "author": "",

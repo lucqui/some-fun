@@ -7,10 +7,9 @@ class Packet {
     body: string;
     signature: string;
 
-    constructor(header, body: string, signature: string) {
-        if(body === null && signature === null) {
-            let tmp = header.toString().split('\n');
-            this(tmp[0], tmp[1], tmp[2])
+    constructor(header: string, body: string, signature: string) {
+        if(typeof body === 'undefined' && typeof signature === 'undefined') {
+            [header, body, signature] = header.toString().split('\n')
         }
         this.header = header;
         this.body = body;

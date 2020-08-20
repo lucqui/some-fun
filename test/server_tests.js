@@ -13,7 +13,6 @@ describe('Test tcp server connects to a client', function () {
     it('Should reply with some err message if any', function (done) {
         testClient.connect(port, host, function () {});
 
-        // When data is returned from server
         testClient.on('data', function(data) {
             assert(data.toString().includes('CONNECTION_INITIATED'));
             testClient.end();
@@ -23,5 +22,3 @@ describe('Test tcp server connects to a client', function () {
     });
 
 });
-
-//TODO: write happy-path unit tests for each method in server (index.js)
